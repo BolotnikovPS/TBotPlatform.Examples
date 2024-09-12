@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Mapster" Version="7.4.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.4" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Example1.Domain\Example1.Domain.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Update="**\AddCarState.*.cs">
+			<DependentUpon>AddCarState.cs</DependentUpon>
+		</Compile>
+		<Compile Update="**\DependencyInjection.*.cs">
+			<DependentUpon>DependencyInjection.cs</DependentUpon>
+		</Compile>
+	</ItemGroup>
+
+</Project>
