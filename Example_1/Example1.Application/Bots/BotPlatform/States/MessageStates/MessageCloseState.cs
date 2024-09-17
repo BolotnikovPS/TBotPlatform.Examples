@@ -3,6 +3,7 @@ using Example1.Domain.Abstractions.BotControl;
 using Example1.Domain.Contexts.BotPlatform;
 using Example1.Domain.EnumCollection;
 using Example1.Domain.Enums;
+using TBotPlatform.Contracts;
 using TBotPlatform.Contracts.Abstractions.Cache;
 using TBotPlatform.Contracts.Abstractions.Contexts.AsyncDisposable;
 
@@ -15,7 +16,7 @@ internal class MessageCloseState(ICacheService cacheService) : MyBaseState(cache
     {
         await context.UpdateMarkupTextAndDropButtonAsync(InlineButtonsCollection.Instance.GetValueByKey(EInlineButtonsType.ToClose), cancellationToken);
 
-        context.SetNeedIsForceReplyLastMenu();
+        context.SetNeedUpdateMarkup();
 
         await RemoveValuesInCacheAsync(user.Id, cancellationToken);
     }

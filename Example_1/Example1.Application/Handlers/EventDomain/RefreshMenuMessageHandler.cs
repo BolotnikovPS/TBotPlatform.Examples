@@ -7,7 +7,7 @@ using TBotPlatform.Contracts.Abstractions.Factories;
 
 namespace Example1.Application.Handlers.EventDomain;
 
-internal class RefreshMenuMessageHandler(ISenderRun senderRun, IStateContextFactory stateContextFactory, IStateFactory stateFactory) : IEventDomainMessageHandler<RefreshMenuMessage>
+internal class RefreshMenuMessageHandler(ISenderRun senderRun, IStateContextFactory stateContextFactory, IStateFactory stateFactory, IMenuButtonFactory menuButtonFactory) : IEventDomainMessageHandler<RefreshMenuMessage>
 {
     public async Task Handle(RefreshMenuMessage message, CancellationToken cancellationToken)
     {
@@ -18,7 +18,7 @@ internal class RefreshMenuMessageHandler(ISenderRun senderRun, IStateContextFact
             var state = stateFactory.GetStateByNameOrDefault();
             await using var stateContext = stateContextFactory.CreateStateContext(user);
 
-            await stateContextFactory.UpdateMarkupByStateAsync(user, stateContext, state, cancellationToken);
+            await menuButtonFactory.UpdateMarkupByStateAsync(user, stateContext, state, cancellationToken);
         }
     }
 }

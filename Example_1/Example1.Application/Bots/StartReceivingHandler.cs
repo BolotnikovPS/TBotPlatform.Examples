@@ -22,6 +22,7 @@ internal sealed class StartReceivingHandler(
     ISenderRun senderRun,
     IStateFactory stateFactory,
     IStateContextFactory stateContextFactory,
+    IMenuButtonFactory menuButtonFactory,
     IBotType botType
     ) : IStartReceivingHandler
 {
@@ -81,14 +82,16 @@ internal sealed class StartReceivingHandler(
                 stateHistory = await stateFactory.GetStateMainAsync(user.ChatId, cancellationToken);
             }
 
-            await using var stateContext = await stateContextFactory.CreateStateContextAsync(user, stateHistory, chatMessage, markupNextState, cancellationToken);
+            await using var stateContext = await stateContextFactory.CreateStateContextAsync(user, stateHistory!, chatMessage, markupNextState, cancellationToken);
 
-            if (stateHistory!.MenuStateType.IsNotNull() || stateContext.IsForceReplyLastMenu)
+            var stateResult = stateContextFactory.GetStateResult(stateContext);
+
+            if (stateHistory!.MenuStateType.IsNotNull() || stateResult!.IsNeedUpdateMarkup)
             {
-                var markUp = stateContext.IsForceReplyLastMenu
+                var markUp = stateResult!.IsNeedUpdateMarkup
                     ? await stateFactory.GetLastStateWithMenuAsync(user.ChatId, cancellationToken)
                     : stateHistory;
-                await stateContextFactory.UpdateMarkupByStateAsync(user, stateContext, markUp, cancellationToken);
+                await menuButtonFactory.UpdateMarkupByStateAsync(user, stateContext, markUp, cancellationToken);
             }
         }
         catch (Exception ex)

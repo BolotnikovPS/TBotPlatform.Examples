@@ -9,15 +9,13 @@ using TBotPlatform.Extension;
 
 namespace Example1.Application.Handlers.EventDomain;
 
-internal class UserVerificationAvailableMessageHandler(ISenderRun senderRun, IStateContextFactory stateContextFactory, IStateFactory stateFactory)
+internal class UserVerificationAvailableMessageHandler(ISenderRun senderRun, IStateContextFactory stateContextFactory, IStateFactory stateFactory, IMenuButtonFactory menuButtonFactory)
     : IEventDomainMessageHandler<UserVerificationAvailableMessage>
 {
     public async Task Handle(UserVerificationAvailableMessage message, CancellationToken cancellationToken)
     {
-        var user = await senderRun.SendAsync(
-            new UserQuery(null, null, message.UserId),
-            cancellationToken
-            );
+        var userQuery = new UserQuery(null, null, message.UserId);
+        var user = await senderRun.SendAsync(userQuery, cancellationToken);
 
         if (user.IsNull())
         {
@@ -29,16 +27,12 @@ internal class UserVerificationAvailableMessageHandler(ISenderRun senderRun, ISt
 
         await stateContext.SendTextMessageAsync("🔓 Вы разблокированы по решению администратора.", cancellationToken);
 
-        await senderRun.SendAsync(
-            new UpdateOrCreateVerificationCommand(user.Id, EUserEventType.None),
-            cancellationToken
-            );
+        var updateOrCreateVerificationCommand = new UpdateOrCreateVerificationCommand(user.Id, EUserEventType.None);
+        await senderRun.SendAsync(updateOrCreateVerificationCommand, cancellationToken);
 
-        await senderRun.SendAsync(
-            new UpdateUserCommand(user.Id, EUserBlockType.None),
-            cancellationToken
-            );
+        var updateUserCommand = new UpdateUserCommand(user.Id, EUserBlockType.None);
+        await senderRun.SendAsync(updateUserCommand, cancellationToken);
 
-        await stateContextFactory.UpdateMarkupByStateAsync(user, stateContext, state, cancellationToken);
+        await menuButtonFactory.UpdateMarkupByStateAsync(user, stateContext, state, cancellationToken);
     }
 }
