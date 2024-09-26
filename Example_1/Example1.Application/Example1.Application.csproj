@@ -6,7 +6,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Mapster" Version="7.4.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.4" />
 		<PackageReference Include="TBotPlatform.Common" Version="1.0.4" />
 	</ItemGroup>
@@ -16,9 +15,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Compile Update="**\AddCarState.*.cs">
-			<DependentUpon>AddCarState.cs</DependentUpon>
-		</Compile>
 		<Compile Update="**\DependencyInjection.*.cs">
 			<DependentUpon>DependencyInjection.cs</DependentUpon>
 		</Compile>
