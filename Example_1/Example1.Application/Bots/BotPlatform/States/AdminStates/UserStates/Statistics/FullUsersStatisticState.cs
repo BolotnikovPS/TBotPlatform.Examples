@@ -1,21 +1,21 @@
 ﻿using Example1.Application.Extensions;
 using Example1.Domain.Abstractions.BotControl;
-using Example1.Domain.Abstractions.CQRS;
 using Example1.Domain.Abstractions.Helpers;
 using System.Text;
 using Example1.Application.Attributes;
 using Example1.Application.CQ.DbContext.BotPlatformContext.Queries;
+using MediatR;
 using TBotPlatform.Contracts.Abstractions.Contexts.AsyncDisposable;
 using User = Example1.Domain.Contexts.BotPlatform.User;
 
 namespace Example1.Application.Bots.BotPlatform.States.AdminStates.UserStates.Statistics;
 
 [MyStateInlineActivator]
-internal class FullUsersStatisticState(ISenderRun senderRun, IDateTimeHelper dateTimeHelper) : IMyState
+internal class FullUsersStatisticState(IMediator mediator, IDateTimeHelper dateTimeHelper) : IMyState
 {
     public async Task HandleAsync(IStateContext context, User user, CancellationToken cancellationToken)
     {
-        var users = await senderRun.SendAsync(new UsersQuery(), cancellationToken);
+        var users = await mediator.Send(new UsersQuery(), cancellationToken);
 
         var sbText = new StringBuilder($"Всего пользователей: {users.Count}")
                     .AppendLine()

@@ -2,8 +2,8 @@
 using Example1.Application.CQ.DbContext.BotPlatformContext.Queries;
 using Example1.Application.Extensions;
 using Example1.Domain.Abstractions.BotControl;
-using Example1.Domain.Abstractions.CQRS;
 using Example1.Domain.Contexts.BotPlatform;
+using MediatR;
 using TBotPlatform.Contracts.Abstractions.Contexts.AsyncDisposable;
 using TBotPlatform.Contracts.Bots.Pagination;
 using TBotPlatform.Extension;
@@ -11,11 +11,11 @@ using TBotPlatform.Extension;
 namespace Example1.Application.Bots.BotPlatform.States.AdminStates.UserStates;
 
 [MyStateInlineActivator]
-internal class NotActiveUsersState(ISenderRun senderRun) : IMyState
+internal class NotActiveUsersState(IMediator mediator) : IMyState
 {
     public async Task HandleAsync(IStateContext context, User user, CancellationToken cancellationToken)
     {
-        var users = await senderRun.SendAsync(new UsersQuery(), cancellationToken);
+        var users = await mediator.Send(new UsersQuery(), cancellationToken);
         users = users
                .Where(
                     z => z.Id != user.Id

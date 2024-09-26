@@ -2,22 +2,22 @@
 using Example1.Application.Contracts.Messages.DomainMessage;
 using Example1.Application.CQ.DbContext.BotPlatformContext.Commands;
 using Example1.Domain.Abstractions.BotControl;
-using Example1.Domain.Abstractions.CQRS;
 using Example1.Domain.Abstractions.Publishers.EventDomain;
 using Example1.Domain.Contexts.BotPlatform;
 using Example1.Domain.Contexts.BotPlatform.Enums;
+using MediatR;
 using TBotPlatform.Contracts.Abstractions.Contexts.AsyncDisposable;
 
 namespace Example1.Application.Bots.BotPlatform.States.AdminStates.UserStates.Lockers;
 
 [MyStateInlineActivator]
-internal class ToUnLockUserState(ISenderRun senderRun, IEventDomainPublisher domainPublisher) : IMyState
+internal class ToUnLockUserState(IMediator mediator, IEventDomainPublisher domainPublisher) : IMyState
 {
     private const string Text = "Пользователь разблокирован.";
 
     public async Task HandleAsync(IStateContext context, User user, CancellationToken cancellationToken)
     {
-        await senderRun.SendAsync(new UpdateUserCommand(long.Parse(context.MarkupNextState.Data), EUserBlockType.None), cancellationToken);
+        await mediator.Send(new UpdateUserCommand(long.Parse(context.MarkupNextState.Data), EUserBlockType.None), cancellationToken);
 
         await domainPublisher.PublishAsync(
             new UserVerificationAvailableMessage(int.Parse(context.MarkupNextState.Data)),

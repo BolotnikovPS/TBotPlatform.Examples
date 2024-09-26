@@ -1,6 +1,8 @@
 ﻿using Example1.Domain.Abstractions.Publishers.EventDomain;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
+using System.Text;
 using TBotPlatform.Extension;
 
 namespace Example1.Application.Templates;
@@ -14,16 +16,29 @@ internal class DomainEventPublisher(
     {
         cancellationToken.ThrowIfCancellationRequested();
 
+        Exception exception = null;
+        var sbLog = new StringBuilder();
+        var sw = new Stopwatch();
+
         try
         {
-            logger.LogInformation("Сообщение для {domainEventPublisher} типа {messageType}: {message}", nameof(DomainEventPublisher), message.GetType().FullName, message.ToJson());
+            sbLog.AppendLine($"Сообщение типа {message.GetType().FullName}: {message.ToJson()}");
 
             await publisher.Publish(message, cancellationToken);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Ошибка в {domainEventPublisher} типа {messageType}: {message}", nameof(DomainEventPublisher), message.GetType().FullName, message.ToJson());
+            exception = ex;
             throw;
+        }
+        finally
+        {
+            sw.Stop();
+
+            sbLog.AppendLine($"Время выполнения {sw.Elapsed.Milliseconds} милли секунд.");
+
+            var logLevel = exception.IsNotNull() ? LogLevel.Error : LogLevel.Debug;
+            logger.Log(logLevel, exception, sbLog.ToString());
         }
     }
 }

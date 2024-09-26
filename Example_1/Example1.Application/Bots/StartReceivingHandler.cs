@@ -2,10 +2,10 @@
 using Example1.Application.CQ.DbContext.BotPlatformContext.Commands;
 using Example1.Application.Extensions;
 using Example1.Domain.Abstractions.BotControl;
-using Example1.Domain.Abstractions.CQRS;
 using Example1.Domain.Contexts.BotPlatform.Enums;
 using Example1.Domain.EnumCollection;
 using Example1.Domain.Enums;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using TBotPlatform.Contracts.Abstractions.Factories;
 using TBotPlatform.Contracts.Abstractions.Handlers;
@@ -19,7 +19,7 @@ namespace Example1.Application.Bots;
 
 internal sealed class StartReceivingHandler(
     ILogger<StartReceivingHandler> logger,
-    ISenderRun senderRun,
+    IMediator mediator,
     IStateFactory stateFactory,
     IStateContextFactory stateContextFactory,
     IMenuButtonFactory menuButtonFactory,
@@ -32,7 +32,7 @@ internal sealed class StartReceivingHandler(
         User user;
         try
         {
-            user = await senderRun.SendAsync(new GetOrCreateUserCommand(telegramUser), cancellationToken);
+            user = await mediator.Send(new GetOrCreateUserCommand(telegramUser), cancellationToken);
 
             if (user.IsNull())
             {
@@ -114,7 +114,7 @@ internal sealed class StartReceivingHandler(
             if (chatMember!.Status.In(EChatMemberStatus.Kicked))
             {
                 var updateUserCommand = new UpdateUserCommand(user.Id, EUserBlockType.KickedByUser);
-                await senderRun.SendAsync(updateUserCommand, cancellationToken);
+                await mediator.Send(updateUserCommand, cancellationToken);
 
                 return;
             }
@@ -126,7 +126,7 @@ internal sealed class StartReceivingHandler(
                     : EUserBlockType.None;
 
                 var updateUserCommand = new UpdateUserCommand(user.Id, blockType);
-                await senderRun.SendAsync(updateUserCommand, cancellationToken);
+                await mediator.Send(updateUserCommand, cancellationToken);
             }
         }
         catch (Exception ex)

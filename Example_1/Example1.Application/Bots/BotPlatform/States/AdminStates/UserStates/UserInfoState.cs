@@ -4,22 +4,22 @@ using Example1.Application.Bots.BotPlatform.States.AdminStates.UserStates.Locker
 using Example1.Application.CQ.DbContext.BotPlatformContext.Queries;
 using Example1.Application.Extensions;
 using Example1.Domain.Abstractions.BotControl;
-using Example1.Domain.Abstractions.CQRS;
 using Example1.Domain.Bots;
 using Example1.Domain.Contexts.BotPlatform;
 using Example1.Domain.Contexts.BotPlatform.Enums;
 using Example1.Domain.Enums;
+using MediatR;
 using TBotPlatform.Contracts.Abstractions.Contexts.AsyncDisposable;
 using TBotPlatform.Contracts.Bots.Markups;
 
 namespace Example1.Application.Bots.BotPlatform.States.AdminStates.UserStates;
 
 [MyStateInlineActivator]
-internal class UserInfoState(ISenderRun senderRun) : IMyState
+internal class UserInfoState(IMediator mediator) : IMyState
 {
     public async Task HandleAsync(IStateContext context, User user, CancellationToken cancellationToken)
     {
-        var userFromState = await senderRun.SendAsync(
+        var userFromState = await mediator.Send(
             new UserQuery(null, null, long.Parse(context.MarkupNextState.Data)),
             cancellationToken
             );
