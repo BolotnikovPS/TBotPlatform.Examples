@@ -4,4 +4,4 @@ using TBotPlatform.Contracts.Bots.Buttons;
 
 namespace Example1.Domain.Bots;
 
-public class MyButtonsRule(EButtonsType button) : ButtonsRule(ButtonCollection.Instance.GetValueByKey(button));
+public class MyMainButton(EButtonsType button) : MainButton(ButtonCollection.Instance.GetValueByKey(button));

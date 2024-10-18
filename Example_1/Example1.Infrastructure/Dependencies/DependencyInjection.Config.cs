@@ -39,11 +39,7 @@ public static partial class DependencyInjection
     }
 
     public static IServiceCollection AddConfigService(this IServiceCollection services)
-    {
-        services.AddSingleton<IConfigService, ConfigService>();
-
-        return services;
-    }
+    => services.AddSingleton<IConfigService, ConfigService>();
 
     private static T GetValueOrException<T>(IConfigService configService, EConfigKey key)
     {

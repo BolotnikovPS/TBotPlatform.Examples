@@ -8,32 +8,32 @@ namespace Example1.Application.Bots.BotPlatform.MenuButton;
 
 internal class AdminMenuButton : IMenuButton
 {
-    public Task<ButtonsRuleMassiveList> GetMarkUpAsync<T>(T user)
+    public Task<MainButtonMassiveList> GetMarkUpAsync<T>(T user)
         where T : UserBase
     {
-        var menu = new ButtonsRuleMassiveList
+        var menu = new MainButtonMassiveList
         {
             new()
             {
-                ButtonsRules =
+                MainButtons = 
                 [
-                    new MyButtonsRule(EButtonsType.GetAllUsers),
-                    new MyButtonsRule(EButtonsType.GetUsersStatistic),
+                    new MyMainButton(EButtonsType.GetAllUsers),
+                    new MyMainButton(EButtonsType.GetUsersStatistic),
                 ],
             },
             new()
             {
-                ButtonsRules =
+                MainButtons = 
                 [
-                    new MyButtonsRule(EButtonsType.ListJobs),
-                    new MyButtonsRule(EButtonsType.RefreshMenu),
+                    new MyMainButton(EButtonsType.ListJobs),
+                    new MyMainButton(EButtonsType.RefreshMenu),
                 ],
             },
             new()
             {
-                ButtonsRules =
+                MainButtons = 
                 [
-                    new MyButtonsRule(EButtonsType.ToBackMain),
+                    new MyMainButton(EButtonsType.ToBackMain),
                 ],
             },
         };

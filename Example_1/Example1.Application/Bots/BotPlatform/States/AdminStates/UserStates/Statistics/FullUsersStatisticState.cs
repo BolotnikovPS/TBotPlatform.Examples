@@ -1,11 +1,12 @@
-﻿using Example1.Application.Extensions;
+﻿using Example1.Application.Attributes;
+using Example1.Application.CQ.DbContext.BotPlatformContext.Queries;
+using Example1.Application.Extensions;
 using Example1.Domain.Abstractions.BotControl;
 using Example1.Domain.Abstractions.Helpers;
-using System.Text;
-using Example1.Application.Attributes;
-using Example1.Application.CQ.DbContext.BotPlatformContext.Queries;
 using MediatR;
+using System.Text;
 using TBotPlatform.Contracts.Abstractions.Contexts.AsyncDisposable;
+using TBotPlatform.Contracts.Bots.FileDatas;
 using User = Example1.Domain.Contexts.BotPlatform.User;
 
 namespace Example1.Application.Bots.BotPlatform.States.AdminStates.UserStates.Statistics;
@@ -31,8 +32,7 @@ internal class FullUsersStatisticState(IMediator mediator, IDateTimeHelper dateT
                              {
                                  Date = group.Key,
                                  Count = group.Count(),
-                             }
-                             )
+                             })
                         .OrderBy(y => y.Date);
 
         var csv = new StringBuilder();
@@ -44,7 +44,13 @@ internal class FullUsersStatisticState(IMediator mediator, IDateTimeHelper dateT
 
         await using var fileStream = new MemoryStream();
 
-        await context.SendDocumentAsync(Encoding.UTF8.GetBytes(csv.ToString()), $"users_{dateTimeHelper.GetLocalDateNow().ToRussian()}.csv", cancellationToken);
+        var file = new FileDataBase
+        {
+            Bytes = Encoding.UTF8.GetBytes(csv.ToString()),
+            Name = $"users_{dateTimeHelper.GetLocalDateNow().ToRussian()}.csv",
+        };
+
+        await context.SendDocumentAsync(file, cancellationToken);
         await context.UpdateMarkupTextAndDropButtonAsync(sbText.ToString(), cancellationToken);
     }
 

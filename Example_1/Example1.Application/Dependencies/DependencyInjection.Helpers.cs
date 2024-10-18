@@ -7,11 +7,7 @@ namespace Example1.Application.Dependencies;
 public static partial class DependencyInjection
 {
     internal static IServiceCollection AddHelpers(this IServiceCollection services)
-    {
-        services
-           .AddSingleton<IDeclensionHelper, DeclensionHelper>()
-           .AddSingleton<IDateTimeHelper, DateTimeHelper>();
-
-        return services;
-    }
+        => services
+          .AddSingleton<IDeclensionHelper, DeclensionHelper>()
+          .AddSingleton<IDateTimeHelper, DateTimeHelper>();
 }

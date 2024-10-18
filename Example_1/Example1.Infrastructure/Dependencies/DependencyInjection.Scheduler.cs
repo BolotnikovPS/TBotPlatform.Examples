@@ -49,7 +49,8 @@ public static partial class DependencyInjection
             : result.AddMinutes(newMinute - result.Minute);
     }
 
-    private static DateTime CreateStartDateTimeForHour(DateTime dateTimeNow) => dateTimeNow.AddHours(1).AddMinutes(-dateTimeNow.Minute).AddSeconds(-dateTimeNow.Second);
+    private static DateTime CreateStartDateTimeForHour(DateTime dateTimeNow)
+        => dateTimeNow.AddHours(1).AddMinutes(-dateTimeNow.Minute).AddSeconds(-dateTimeNow.Second);
 
     private static void AddMinutely<T>(
         this IServiceCollectionQuartzConfigurator serviceCollectionQuartzConfigurator,
