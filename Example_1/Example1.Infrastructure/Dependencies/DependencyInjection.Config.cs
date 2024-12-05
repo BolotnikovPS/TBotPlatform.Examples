@@ -16,13 +16,15 @@ public static partial class DependencyInjection
 
     public static IConfigurationBuilder AddConsulConfig(this IConfigurationBuilder builder, IConfiguration configuration, EBotType botType)
     {
+        const string consulValue = "Consul";
+
         var consulSettings = configuration
-                            .GetSection("Consul")
+                            .GetSection(consulValue)
                             .Get<ConfigSettings>(c => c.BindNonPublicProperties = true);
 
         if (consulSettings.IsNull())
         {
-            throw new ArgumentNullException(nameof(consulSettings));
+            throw new ArgumentNullException(consulValue);
         }
 
         return builder

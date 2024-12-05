@@ -8,7 +8,7 @@ namespace Example1.Application.Bots.BotPlatform.MenuButton;
 
 internal class AdminMenuButton : IMenuButton
 {
-    public Task<MainButtonMassiveList> GetMarkUpAsync<T>(T user)
+    public Task<MainButtonMassiveList> GetMainButtonsAsync<T>(T user)
         where T : UserBase
     {
         var menu = new MainButtonMassiveList

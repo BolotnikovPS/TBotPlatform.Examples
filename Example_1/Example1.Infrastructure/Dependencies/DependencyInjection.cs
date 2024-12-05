@@ -18,12 +18,12 @@ public static partial class DependencyInjection
 
         var configService = services.BuildServiceProvider().GetRequiredService<IConfigService>();
 
-        var redis = GetValueOrException(configService, EConfigKey.Redis);
+        var redisConnectionString = GetValueOrException(configService, EConfigKey.Redis);
         var telegram = GetValueOrException<TelegramSettings>(configService, EConfigKey.Telegram);
 
         services
            .AddTelegramContextHostedService(telegram)
-           .AddCache(redis, botType.ToString(), Tags)
+           .AddCache(redisConnectionString, prefix: botType.ToString(), tags: Tags)
            .AddBotTypeInfrastructure(configService, Tags)
            .AddApplication(botType)
            .AddQuartzScheduler(botType);
