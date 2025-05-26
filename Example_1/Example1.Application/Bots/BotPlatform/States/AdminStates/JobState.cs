@@ -2,7 +2,6 @@
 using Example1.Application.Attributes;
 using Example1.Application.Bots.BotPlatform.States.MessageStates;
 using Example1.Application.Extensions;
-using Example1.Domain.Abstractions.BotControl;
 using Example1.Domain.Abstractions.Helpers;
 using Example1.Domain.Bots;
 using Example1.Domain.Contexts.BotPlatform;
@@ -15,17 +14,17 @@ using TBotPlatform.Extension;
 namespace Example1.Application.Bots.BotPlatform.States.AdminStates;
 
 [MyStateInlineActivator(ButtonsTypes = [EButtonsType.ListJobs,])]
-internal class JobState(ISchedulerJobFactory schedulerFactory, IDateTimeHelper dateTimeHelper) : IMyState
+internal class JobState(ISchedulerJobFactory schedulerFactory, IDateTimeHelper dateTimeHelper) : MyBaseStateHandler
 {
     private const string NoJobText = "Нет джобов.";
 
-    public async Task HandleAsync(IStateContext context, User user, CancellationToken cancellationToken)
+    public override async Task Handle(IStateContext context, User user, CancellationToken cancellationToken)
     {
         var jobs = await schedulerFactory.GetJobListAsync(cancellationToken);
 
         if (jobs.IsNull())
         {
-            await context.SendTextMessageAsync(NoJobText, cancellationToken);
+            await context.SendTextMessage(NoJobText, cancellationToken);
 
             return;
         }
@@ -41,7 +40,7 @@ internal class JobState(ISchedulerJobFactory schedulerFactory, IDateTimeHelper d
 
             inlineButtons.Add(new MyInlineMarkupState(EInlineButtonsType.ToClose, nameof(MessageCloseState)));
 
-            await context.SendOrUpdateTextMessageAsync($"Список джобов на {dateTimeHelper.GetLocalDateTimeNow().ToRussianWithHours()}", inlineButtons, null, cancellationToken);
+            await context.SendOrUpdateTextMessage($"Список джобов на {dateTimeHelper.GetLocalDateTimeNow().ToRussianWithHours()}", inlineButtons, null, cancellationToken);
 
             return;
         }
@@ -52,18 +51,14 @@ internal class JobState(ISchedulerJobFactory schedulerFactory, IDateTimeHelper d
 
             if (job.IsNull())
             {
-                await context.SendOrUpdateTextMessageAsync($"🛑 Задача {context.MarkupNextState.Data} не найдена.", cancellationToken);
+                await context.SendOrUpdateTextMessage($"🛑 Задача {context.MarkupNextState.Data} не найдена.", cancellationToken);
 
                 return;
             }
 
             await schedulerFactory.StartJobAsync(job, cancellationToken);
 
-            await context.SendOrUpdateTextMessageAsync($"💪 Задача {job.Name} запущена.", cancellationToken);
+            await context.SendOrUpdateTextMessage($"💪 Задача {job.Name} запущена.", cancellationToken);
         }
     }
-
-    public Task HandleCompleteAsync(IStateContext context, User user, CancellationToken cancellationToken) => Task.CompletedTask;
-
-    public Task HandleErrorAsync(IStateContext context, User user, Exception exception, CancellationToken cancellationToken) => Task.CompletedTask;
 }

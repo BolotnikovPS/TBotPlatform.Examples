@@ -7,12 +7,14 @@ using Example1.Domain.EnumCollection;
 using Example1.Domain.Enums;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using TBotPlatform.Common;
 using TBotPlatform.Contracts.Abstractions.Factories;
 using TBotPlatform.Contracts.Abstractions.Handlers;
 using TBotPlatform.Contracts.Bots;
 using TBotPlatform.Contracts.Bots.ChatUpdate;
-using TBotPlatform.Contracts.Bots.ChatUpdate.Enums;
 using TBotPlatform.Extension;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using User = Example1.Domain.Contexts.BotPlatform.User;
 
 namespace Example1.Application.Bots;
@@ -26,7 +28,7 @@ internal sealed class StartReceivingHandler(
     IBotType botType
     ) : IStartReceivingHandler
 {
-    public async Task HandleUpdateAsync(ChatUpdate chatUpdate, MarkupNextState? markupNextState, TelegramMessageUserData telegramUser, CancellationToken cancellationToken)
+    public async Task HandleUpdate(Update update, MarkupNextState? markupNextState, TelegramMessageUserData telegramUser, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         User user;
@@ -39,59 +41,57 @@ internal sealed class StartReceivingHandler(
                 return;
             }
 
-            if (user.IsLock() && chatUpdate.UpdateType.NotIn(EChatUpdateType.MyChatMember))
+            if (user.IsLock() && update.Type.NotIn(UpdateType.MyChatMember))
             {
-                var stateHistory = stateFactory.GetLockState();
-                await using var stateContext = await stateContextFactory.CreateStateContextAsync(user, stateHistory, chatUpdate, cancellationToken);
+                var stateHistory = stateFactory.LockState;
+                await using var stateContext = await stateContextFactory.CreateStateContext(user, stateHistory, update, cancellationToken);
 
                 return;
             }
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Ошибка определения пользователя для запроса {update}", chatUpdate.ToJson());
+            logger.LogError(ex, "Ошибка определения пользователя для запроса {update}", update.ToJson());
 
             return;
         }
 
-        if (chatUpdate.UpdateType.In(EChatUpdateType.Message, EChatUpdateType.CallbackQuery))
+        if (update.Type.In(UpdateType.Message, UpdateType.CallbackQuery))
         {
-            await DoWorkMessageAsync(user, chatUpdate, markupNextState, cancellationToken);
+            await DoWorkMessageAsync(user, update, markupNextState, cancellationToken);
             return;
         }
 
-        if (chatUpdate.UpdateType.In(EChatUpdateType.MyChatMember))
+        if (update.Type.In(UpdateType.MyChatMember))
         {
-            await DoWorkMemberAsync(user, chatUpdate, cancellationToken);
+            await DoWorkMemberAsync(user, update, cancellationToken);
         }
     }
 
-    private async Task DoWorkMessageAsync(User user, ChatUpdate chatMessage, MarkupNextState? markupNextState, CancellationToken cancellationToken)
+    private async Task DoWorkMessageAsync(User user, Update update, MarkupNextState? markupNextState, CancellationToken cancellationToken)
     {
         try
         {
-            var stateHistory = chatMessage.UpdateType switch
+            var stateHistory = update.Type switch
             {
-                EChatUpdateType.Message => await DetermineStateAsync(user.ChatId, chatMessage, stateFactory, cancellationToken),
-                EChatUpdateType.CallbackQuery => stateFactory.GetStateByNameOrDefault(markupNextState?.State),
+                UpdateType.Message => await DetermineStateAsync(user.ChatId, update, stateFactory, cancellationToken),
+                UpdateType.CallbackQuery => stateFactory.GetStateByNameOrDefault(markupNextState?.State),
                 _ => null,
             };
 
             if (stateHistory.IsNull())
             {
-                stateHistory = await stateFactory.GetStateMainAsync(user.ChatId, cancellationToken);
+                stateHistory = await stateFactory.GetStateMain(user.ChatId, cancellationToken);
             }
 
-            await using var stateContext = await stateContextFactory.CreateStateContextAsync(user, stateHistory!, chatMessage, markupNextState, cancellationToken);
+            await using var stateContext = await stateContextFactory.CreateStateContext(user, stateHistory!, update, markupNextState, cancellationToken);
 
-            var stateResult = stateContextFactory.GetStateResult(stateContext);
-
-            if (stateHistory!.MenuStateType.IsNotNull() || stateResult!.IsNeedUpdateMarkup)
+            if (stateContext.TryGetStateResult(out var stateResult) && (stateHistory!.MenuStateTypeOrNull.IsNotNull() || stateResult!.IsNeedUpdateMarkup))
             {
                 var markUp = stateResult!.IsNeedUpdateMarkup
-                    ? await stateFactory.GetLastStateWithMenuAsync(user.ChatId, cancellationToken)
+                    ? await stateFactory.GetLastStateWithMenu(user.ChatId, cancellationToken)
                     : stateHistory;
-                await menuButtonFactory.UpdateMarkupByStateAsync(user, stateContext, markUp, cancellationToken);
+                await menuButtonFactory.UpdateMainButtonsByState(user, stateContext, markUp, cancellationToken);
             }
         }
         catch (Exception ex)
@@ -100,18 +100,18 @@ internal sealed class StartReceivingHandler(
         }
     }
 
-    private async Task DoWorkMemberAsync(User user, ChatUpdate chatMessage, CancellationToken cancellationToken)
+    private async Task DoWorkMemberAsync(User user, Update update, CancellationToken cancellationToken)
     {
         try
         {
-            var chatMember = chatMessage.MyMemberUpdateOrNull?.NewChatMember;
+            var chatMember = update.MyChatMember?.NewChatMember;
 
             if (chatMember.IsNull())
             {
                 return;
             }
 
-            if (chatMember!.Status.In(EChatMemberStatus.Kicked))
+            if (chatMember!.Status.In(ChatMemberStatus.Kicked))
             {
                 var updateUserCommand = new UpdateUserCommand(user.Id, EUserBlockType.KickedByUser);
                 await mediator.Send(updateUserCommand, cancellationToken);
@@ -119,7 +119,7 @@ internal sealed class StartReceivingHandler(
                 return;
             }
 
-            if (chatMember.Status.In(EChatMemberStatus.Member))
+            if (chatMember.Status.In(ChatMemberStatus.Member))
             {
                 var blockType = botType.GetBotType().BotSetting.WithRegistration
                     ? EUserBlockType.Registration
@@ -135,27 +135,27 @@ internal sealed class StartReceivingHandler(
         }
     }
 
-    private static async Task<StateHistory?> DetermineStateAsync(long chatId, ChatUpdate chatMessage, IStateFactory stateFactory, CancellationToken cancellationToken)
+    private static async Task<StateHistory?> DetermineStateAsync(long chatId, Update update, IStateFactory stateFactory, CancellationToken cancellationToken)
     {
-        var stateTypeText = TextCollection.Instance.GetKeyByValue(chatMessage.Message.ReplyToMessageOrNull?.Text);
-        var stateTypeButton = ButtonCollection.Instance.GetKeyByValue(chatMessage.Message.Text);
-        var stateTypeCommand = CommandCollection.Instance.GetKeyByValue(chatMessage.Message.Text);
+        var stateTypeText = TextCollection.Instance.GetKeyByValue(update.Message?.ReplyToMessage?.Text);
+        var stateTypeButton = ButtonCollection.Instance.GetKeyByValue(update.Message?.Text);
+        var stateTypeCommand = CommandCollection.Instance.GetKeyByValue(update.Message?.Text);
 
         if (stateTypeButton == EButtonsType.None
             && stateTypeText == ETextsType.None
             && stateTypeCommand == ECommandsType.None
            )
         {
-            return await stateFactory.GetBindStateOrNullAsync(chatId, cancellationToken);
+            return await stateFactory.GetBindStateOrNull(chatId, cancellationToken);
         }
 
         if (stateTypeButton != EButtonsType.None)
         {
             return stateTypeButton switch
             {
-                EButtonsType.ToBack => await stateFactory.GetStatePreviousOrMainAsync(chatId, cancellationToken),
-                EButtonsType.ToBackMain => await stateFactory.GetStateMainAsync(chatId, cancellationToken),
-                _ => await stateFactory.GetStateByButtonsTypeOrDefaultAsync(chatId, stateTypeButton.ToString(), cancellationToken),
+                EButtonsType.ToBack => await stateFactory.GetStatePreviousOrMain(chatId, cancellationToken),
+                EButtonsType.ToBackMain => await stateFactory.GetStateMain(chatId, cancellationToken),
+                _ => await stateFactory.GetStateByButtonsTypeOrDefault(chatId, stateTypeButton.ToString(), cancellationToken),
             };
         }
 
@@ -166,7 +166,7 @@ internal sealed class StartReceivingHandler(
 
         if (stateTypeCommand != ECommandsType.None)
         {
-            return await stateFactory.GetStateByCommandsTypeOrDefaultAsync(chatId, chatMessage.Message.Text, cancellationToken);
+            return await stateFactory.GetStateByCommandsTypeOrDefault(chatId, update.Message?.Text, cancellationToken);
         }
 
         return null;

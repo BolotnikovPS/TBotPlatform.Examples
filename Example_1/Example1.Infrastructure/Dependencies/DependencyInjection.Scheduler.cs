@@ -19,8 +19,6 @@ public static partial class DependencyInjection
         var startAtHour = CreateStartDateTimeForHour(dateTimeNow);
         var startAtNow = dateTimeNow.AddSeconds(20);
 
-        CronScheduleBuilder.DailyAtHourAndMinute(0, 0);
-
         services
            .AddQuartz(
                 options =>

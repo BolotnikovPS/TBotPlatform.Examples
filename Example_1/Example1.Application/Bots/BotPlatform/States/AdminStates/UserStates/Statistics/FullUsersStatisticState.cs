@@ -1,8 +1,8 @@
 ﻿using Example1.Application.Attributes;
 using Example1.Application.CQ.DbContext.BotPlatformContext.Queries;
 using Example1.Application.Extensions;
-using Example1.Domain.Abstractions.BotControl;
 using Example1.Domain.Abstractions.Helpers;
+using Example1.Domain.Bots;
 using MediatR;
 using System.Text;
 using TBotPlatform.Contracts.Abstractions.Contexts.AsyncDisposable;
@@ -12,9 +12,9 @@ using User = Example1.Domain.Contexts.BotPlatform.User;
 namespace Example1.Application.Bots.BotPlatform.States.AdminStates.UserStates.Statistics;
 
 [MyStateInlineActivator]
-internal class FullUsersStatisticState(IMediator mediator, IDateTimeHelper dateTimeHelper) : IMyState
+internal class FullUsersStatisticState(IMediator mediator, IDateTimeHelper dateTimeHelper) : MyBaseStateHandler
 {
-    public async Task HandleAsync(IStateContext context, User user, CancellationToken cancellationToken)
+    public override async Task Handle(IStateContext context, User user, CancellationToken cancellationToken)
     {
         var users = await mediator.Send(new UsersQuery(), cancellationToken);
 
@@ -50,11 +50,7 @@ internal class FullUsersStatisticState(IMediator mediator, IDateTimeHelper dateT
             Name = $"users_{dateTimeHelper.GetLocalDateNow().ToRussian()}.csv",
         };
 
-        await context.SendDocumentAsync(file, cancellationToken);
-        await context.UpdateMarkupTextAndDropButtonAsync(sbText.ToString(), cancellationToken);
+        await context.SendDocument(file, cancellationToken);
+        await context.UpdateMarkupTextAndDropButton(sbText.ToString(), cancellationToken);
     }
-
-    public Task HandleCompleteAsync(IStateContext context, User user, CancellationToken cancellationToken) => Task.CompletedTask;
-
-    public Task HandleErrorAsync(IStateContext context, User user, Exception exception, CancellationToken cancellationToken) => Task.CompletedTask;
 }

@@ -9,11 +9,11 @@
 		<PackageReference Include="prometheus-net.AspNetCore.HealthChecks" Version="8.2.1" />
 		<PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="8.0.1" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
-		<PackageReference Include="Serilog.Extensions.Logging.File" Version="3.0.0" />
+		<PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Example1.Infrastructure\Example1.Infrastructure.csproj" />
+	  <ProjectReference Include="..\Example1.Infrastructure\Example1.Infrastructure.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

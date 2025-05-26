@@ -8,7 +8,7 @@ public sealed class RequestLoggingMiddleware(ILogger<RequestLoggingMiddleware> l
     public async Task Invoke(HttpContext httpContext)
     {
         var check = !httpContext.Request.Path.HasValue
-                    || !httpContext.Request.Path.Value!.Contains("health");
+                    || !httpContext.Request.Path.Value!.Contains("healthz");
         if (check)
         {
             logger.LogInformation($"Поступил запрос: {httpContext.Request.Method} {httpContext.Request.Path}");

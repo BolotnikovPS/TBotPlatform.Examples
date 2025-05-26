@@ -4,10 +4,8 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Prometheus;
 using Serilog;
-using TBotPlatform.Extension;
 
 namespace Example1.Bootstrap;
 
@@ -27,32 +25,11 @@ public static class HostExtensions
                    {
                        services
                           .Configure<KestrelServerOptions>(context.Configuration.GetSection("Kestrel"))
-                          .AddLogging(
-                               loggingBuilder =>
-                               {
-                                   var logFilePath = context.Configuration.GetValue<string>("LogFilePath");
-
-                                   if (logFilePath.IsNull())
-                                   {
-                                       throw new("Конфиг LogFilePath пустой.");
-                                   }
-
-                                   loggingBuilder
-                                      .ClearProviders()
-                                      .AddConfiguration(context.Configuration)
-                                      .AddConsole()
-                                      .AddSerilog()
-                                      .AddFile(
-                                           logFilePath,
-                                           outputTemplate: "{Timestamp:o} {RequestId,13} [{Level:u3}] ({SourceContext}) {Message} ({EventId:x8}){NewLine}{Exception}"
-                                           )
-                                      .SetMinimumLevel(LogLevel.Trace)
-                                      .AddFilter(filter => filter == LogLevel.Trace);
-                               })
                           .AddInfrastructure(botType)
                           .AddHealthChecks()
                           .ForwardToPrometheus();
-                   });
+                   })
+              .UseSerilog();
     }
 
     private static IConfiguration ResolveConsulConfiguration(EBotType botType)
